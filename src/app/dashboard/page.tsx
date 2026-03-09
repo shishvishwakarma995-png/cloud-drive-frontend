@@ -1,12 +1,14 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useFolderContents } from '@/hooks/useFolders';
+import { useFiles } from '@/hooks/useFiles';
 import { useTheme } from '@/context/ThemeContext';
 import Sidebar from '@/components/layout/Sidebar';
 import Toolbar from '@/components/layout/Toolbar';
 import FolderGrid from '@/components/folders/FolderGrid';
+import FileGrid from '@/components/files/FileGrid';
 import { ChevronRight, Home, FolderOpen } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -15,34 +17,46 @@ export default function DashboardPage() {
   const { t } = useTheme();
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [view, setView] = useState<'grid' | 'list'>('grid');
-  const { data, isLoading } = useFolderContents(currentFolderId);
+
+  const { data: folderData, isLoading: foldersLoading } = useFolderContents(currentFolderId);
+  const { data: fileData, isLoading: filesLoading } = useFiles(currentFolderId);
+
+  // Ye useEffect render ke baad chalega — safe tarika hai redirect karne ka
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading]);
 
   if (loading) return (
     <div className={`min-h-screen ${t.bg} flex items-center justify-center`}>
-      <div className="flex flex-col items-center gap-3">
-        <div className={`w-10 h-10 rounded-xl ${t.accent} animate-pulse`} />
-        <p className={`text-sm ${t.textMuted}`}>Loading...</p>
-      </div>
+      <div className={`w-10 h-10 rounded-xl ${t.accent} animate-pulse`} />
     </div>
   );
 
-  if (!user) { router.push('/login'); return null; }
+  if (!user) return null;
 
-  const folders = data?.children?.folders || [];
-  const files = data?.children?.files || [];
-  const breadcrumb = data?.breadcrumb || [];
+  const folders = folderData?.children?.folders || [];
+  const files = fileData?.files || [];
+  const breadcrumb = folderData?.breadcrumb || [];
+  const isLoading = foldersLoading || filesLoading;
 
   return (
     <div className={`flex min-h-screen ${t.bg}`}>
       <Sidebar />
       <div className="ml-64 flex-1 flex flex-col">
-        <Toolbar currentFolderId={currentFolderId} view={view} onViewChange={setView} />
+        <Toolbar
+          currentFolderId={currentFolderId}
+          view={view}
+          onViewChange={setView}
+          onFolderNavigate={setCurrentFolderId}
+        />
         <div className="flex-1 p-6">
 
           {/* Breadcrumb */}
           <div className="flex items-center gap-1 mb-6">
             <button onClick={() => setCurrentFolderId(null)}
-              className={`flex items-center gap-1.5 text-sm font-medium ${t.textMuted} ${t.accentText} transition`}>
+              className={`flex items-center gap-1.5 text-sm font-medium ${t.accentText} transition`}>
               <Home size={14} />
               My Drive
             </button>
@@ -93,7 +107,7 @@ export default function DashboardPage() {
               <h3 className={`text-xs font-bold uppercase tracking-widest mb-3 ${t.textSub}`}>
                 Files — {files.length}
               </h3>
-              <p className={`text-sm ${t.textMuted}`}>Upload feature coming soon!</p>
+              <FileGrid files={files} view={view} />
             </div>
           )}
 

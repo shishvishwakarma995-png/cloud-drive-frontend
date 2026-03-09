@@ -11,31 +11,33 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setLoading(true);
-  setError('');
-  try {
-    const res = await api.post('/api/auth/login', form);
-    if (res.data.user) {
-      window.location.href = '/dashboard';
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      const res = await api.post('/api/auth/login', form);
+      if (res.data.user) {
+        window.location.href = '/dashboard';
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Login failed');
+    } finally {
+      setLoading(false);
     }
-  } catch (err: any) {
-    setError(err.response?.data?.error?.message || 'Login failed');
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-gray-900 rounded-2xl p-8 border border-gray-800">
         <h1 className="text-2xl font-bold text-white mb-2">Welcome back</h1>
         <p className="text-gray-400 text-sm mb-6">Sign in to your Cloud Drive</p>
+
         {error && (
           <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-lg p-3 mb-4">
             {error}
           </div>
         )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="text-sm text-gray-400 block mb-1">Email</label>
@@ -48,8 +50,16 @@ export default function LoginPage() {
               required
             />
           </div>
+
           <div>
-            <label className="text-sm text-gray-400 block mb-1">Password</label>
+            {/* Password label + Forgot Password link ek saath */}
+            <div className="flex justify-between items-center mb-1">
+              <label className="text-sm text-gray-400">Password</label>
+              <Link href="/forgot-password"
+                className="text-xs text-indigo-400 hover:text-indigo-300 transition">
+                Forgot Password?
+              </Link>
+            </div>
             <input
               type="password"
               value={form.password}
@@ -59,6 +69,7 @@ export default function LoginPage() {
               required
             />
           </div>
+
           <button
             type="submit"
             disabled={loading}
@@ -67,6 +78,7 @@ export default function LoginPage() {
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
+
         <p className="text-center text-gray-500 text-sm mt-6">
           Don't have an account?{' '}
           <Link href="/register" className="text-indigo-400 hover:text-indigo-300">Register</Link>

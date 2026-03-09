@@ -11,8 +11,8 @@ export default function TrashPage() {
         <div className={`w-20 h-20 rounded-2xl ${t.accentBg} flex items-center justify-center mb-4`}>
           <Trash2 size={32} className={t.accentText} />
         </div>
-        <p className={`font-semibold text-lg ${t.text}`}>Trash</p>
-        <p className={`text-sm mt-1 ${t.textMuted}`}>Deleted files will appear here</p>
+        <p className={`font-semibold text-lg ${t.text}`}>Shared by others</p>
+        <p className={`text-sm mt-1 ${t.textMuted}`}>Files shared by others will appear here</p>
       </div>
     </div>
   );

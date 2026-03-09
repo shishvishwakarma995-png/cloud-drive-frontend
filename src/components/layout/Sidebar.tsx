@@ -4,6 +4,8 @@ import { usePathname } from 'next/navigation';
 import { HardDrive, Users, Star, Clock, Trash2, Cloud, Sun, Moon, Sparkles } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
+import { useQuery } from '@tanstack/react-query';
+import api from '@/lib/api';
 
 const navItems = [
   { label: 'My Drive', href: '/dashboard', icon: HardDrive },
@@ -17,6 +19,19 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const { mode, accent, toggleMode, toggleAccent, t } = useTheme();
+
+  const { data: storageData } = useQuery({
+    queryKey: ['storage'],
+    queryFn: async () => {
+      const res = await api.get('/api/files/storage');
+      return res.data;
+    },
+    refetchInterval: 30000,
+  });
+
+  const usedGB = storageData?.usedGB || '0.00';
+  const totalGB = storageData?.totalGB || 15;
+  const percentage = storageData?.percentage || 0;
 
   return (
     <div className={`w-64 h-screen fixed left-0 top-0 flex flex-col border-r ${t.sidebar}`}>
@@ -69,15 +84,19 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Storage */}
+      {/* Storage - Real Data */}
       <div className={`mx-3 mb-3 p-3 rounded-xl ${t.accentBg} border ${t.accentBorder}`}>
         <div className={`flex justify-between text-xs ${t.accentText} mb-1.5`}>
           <span className="font-semibold">Storage</span>
-          <span>2.4 / 15 GB</span>
+          <span>{usedGB} / {totalGB} GB</span>
         </div>
-        <div className={`h-1.5 rounded-full overflow-hidden ${t.border} bg-white/30`}>
-          <div className={`h-full rounded-full ${t.accent}`} style={{ width: '16%' }} />
+        <div className={`h-1.5 rounded-full overflow-hidden bg-white/30`}>
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${t.accent}`}
+            style={{ width: `${percentage}%` }}
+          />
         </div>
+        <p className={`text-xs mt-1 ${t.accentText} opacity-70`}>{percentage}% used</p>
       </div>
 
       {/* User */}
