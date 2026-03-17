@@ -28,6 +28,7 @@ export const useUploadFile = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['files'] });
       queryClient.invalidateQueries({ queryKey: ['folders'] });
+      queryClient.invalidateQueries({ queryKey: ['storage'] });
     },
   });
 };
@@ -41,6 +42,7 @@ export const useDeleteFile = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['files'] });
+      queryClient.invalidateQueries({ queryKey: ['storage'] });
     },
   });
 };
@@ -50,6 +52,52 @@ export const useSearch = () => {
     mutationFn: async (q: string) => {
       const res = await api.get(`/api/files/search?q=${encodeURIComponent(q)}`);
       return res.data;
+    },
+  });
+};
+
+// FILE MOVE
+export const useMoveFile = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, folderId }: { id: string; folderId: string | null }) => {
+      const res = await api.patch(`/api/files/${id}/move`, { folderId });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['files'] });
+      queryClient.invalidateQueries({ queryKey: ['folders'] });
+    },
+  });
+};
+
+// FOLDER MOVE
+export const useMoveFolder = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, parentId }: { id: string; parentId: string | null }) => {
+      const res = await api.patch(`/api/folders/${id}/move`, { parentId });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['files'] });
+      queryClient.invalidateQueries({ queryKey: ['folders'] });
+    },
+  });
+};
+
+// End mein add karo:
+export const useRenameFile = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      const res = await api.patch(`/api/files/${id}/rename`, { name });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['files'] });
+      queryClient.invalidateQueries({ queryKey: ['recent'] });
+      queryClient.invalidateQueries({ queryKey: ['starred'] });
     },
   });
 };

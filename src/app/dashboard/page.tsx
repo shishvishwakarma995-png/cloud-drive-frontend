@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useFolderContents } from '@/hooks/useFolders';
-import { useFiles } from '@/hooks/useFiles';
+import { useFiles, useMoveFile, useMoveFolder } from '@/hooks/useFiles';
 import { useTheme } from '@/context/ThemeContext';
 import Sidebar from '@/components/layout/Sidebar';
 import Toolbar from '@/components/layout/Toolbar';
@@ -17,11 +17,13 @@ export default function DashboardPage() {
   const { t } = useTheme();
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [view, setView] = useState<'grid' | 'list'>('grid');
+  const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
 
   const { data: folderData, isLoading: foldersLoading } = useFolderContents(currentFolderId);
   const { data: fileData, isLoading: filesLoading } = useFiles(currentFolderId);
+  const moveFile = useMoveFile();
+  const moveFolder = useMoveFolder();
 
-  // Ye useEffect render ke baad chalega — safe tarika hai redirect karne ka
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
@@ -40,6 +42,36 @@ export default function DashboardPage() {
   const files = fileData?.files || [];
   const breadcrumb = folderData?.breadcrumb || [];
   const isLoading = foldersLoading || filesLoading;
+
+  // Drag handlers
+  const handleDragStart = (e: React.DragEvent, id: string, type: 'file' | 'folder') => {
+    e.dataTransfer.setData('id', id);
+    e.dataTransfer.setData('type', type);
+  };
+
+  const handleDragOver = (e: React.DragEvent, folderId: string) => {
+    e.preventDefault();
+    setDragOverFolder(folderId);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverFolder(null);
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetFolderId: string) => {
+    e.preventDefault();
+    setDragOverFolder(null);
+    const id = e.dataTransfer.getData('id');
+    const type = e.dataTransfer.getData('type');
+
+    if (!id || id === targetFolderId) return;
+
+    if (type === 'file') {
+      await moveFile.mutateAsync({ id, folderId: targetFolderId });
+    } else {
+      await moveFolder.mutateAsync({ id, parentId: targetFolderId });
+    }
+  };
 
   return (
     <div className={`flex min-h-screen ${t.bg}`}>
@@ -64,7 +96,7 @@ export default function DashboardPage() {
               <div key={item.id} className="flex items-center gap-1">
                 <ChevronRight size={14} className={t.textSub} />
                 <button onClick={() => setCurrentFolderId(item.id)}
-                  className={`text-sm font-medium ${t.textMuted} hover:${t.accentText} transition`}>
+                  className={`text-sm font-medium ${t.textMuted} transition`}>
                   {item.name}
                 </button>
               </div>
@@ -97,7 +129,16 @@ export default function DashboardPage() {
               <h3 className={`text-xs font-bold uppercase tracking-widest mb-3 ${t.textSub}`}>
                 Folders — {folders.length}
               </h3>
-              <FolderGrid folders={folders} view={view} onFolderClick={setCurrentFolderId} />
+              <FolderGrid
+                folders={folders}
+                view={view}
+                onFolderClick={setCurrentFolderId}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                dragOverFolder={dragOverFolder}
+              />
             </div>
           )}
 
@@ -107,7 +148,11 @@ export default function DashboardPage() {
               <h3 className={`text-xs font-bold uppercase tracking-widest mb-3 ${t.textSub}`}>
                 Files — {files.length}
               </h3>
-              <FileGrid files={files} view={view} />
+              <FileGrid
+                files={files}
+                view={view}
+                onDragStart={handleDragStart}
+              />
             </div>
           )}
 

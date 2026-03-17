@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { HardDrive, Users, Star, Clock, Trash2, Cloud, Sun, Moon, Sparkles } from 'lucide-react';
+import { HardDrive, Users, Star, Clock, Trash2, Cloud, Sun, Moon } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useQuery } from '@tanstack/react-query';
@@ -18,7 +18,7 @@ const navItems = [
 export default function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
-  const { mode, accent, toggleMode, toggleAccent, t } = useTheme();
+  const { mode, toggleMode, t } = useTheme();
 
   const { data: storageData } = useQuery({
     queryKey: ['storage'],
@@ -35,30 +35,22 @@ export default function Sidebar() {
 
   return (
     <div className={`w-64 h-screen fixed left-0 top-0 flex flex-col border-r ${t.sidebar}`}>
-      {/* Logo */}
-      <div className={`p-5 border-b ${t.border}`}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className={`w-9 h-9 rounded-xl ${t.accent} flex items-center justify-center shadow-sm`}>
-              <Cloud size={18} className="text-white" />
-            </div>
-            <span className={`font-bold text-lg ${t.text}`}>Cloud Drive</span>
-          </div>
-        </div>
-      </div>
 
-      {/* Theme toggles */}
-      <div className={`mx-3 mt-3 p-2 rounded-xl border ${t.border} flex items-center gap-2`}>
-        <button onClick={toggleMode}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition ${t.accentBg} ${t.accentText}`}>
-          {mode === 'light' ? <Sun size={13} /> : <Moon size={13} />}
-          {mode === 'light' ? 'Light' : 'Dark'}
-        </button>
-        <div className={`w-px h-5 ${t.border} border-l`} />
-        <button onClick={toggleAccent}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition ${t.accentBg} ${t.accentText}`}>
-          <Sparkles size={13} />
-          {accent === 'purple' ? 'Purple' : 'Golden'}
+      {/* Logo + Theme Toggle */}
+      <div className={`p-5 border-b ${t.border} flex items-center justify-between`}>
+        <div className="flex items-center gap-2.5">
+          <div className={`w-9 h-9 rounded-xl ${t.accent} flex items-center justify-center shadow-sm`}>
+            <Cloud size={18} className="text-white" />
+          </div>
+          <span className={`font-bold text-lg ${t.text}`}>Cloud Drive</span>
+        </div>
+
+        {/* Sirf Dark/Light toggle */}
+        <button
+          onClick={toggleMode}
+          className={`w-8 h-8 rounded-lg ${t.accentBg} flex items-center justify-center transition ${t.accentText}`}
+          title={mode === 'dark' ? 'Switch to Light' : 'Switch to Dark'}>
+          {mode === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
         </button>
       </div>
 
@@ -84,13 +76,13 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Storage - Real Data */}
+      {/* Storage */}
       <div className={`mx-3 mb-3 p-3 rounded-xl ${t.accentBg} border ${t.accentBorder}`}>
         <div className={`flex justify-between text-xs ${t.accentText} mb-1.5`}>
           <span className="font-semibold">Storage</span>
           <span>{usedGB} / {totalGB} GB</span>
         </div>
-        <div className={`h-1.5 rounded-full overflow-hidden bg-white/30`}>
+        <div className="h-1.5 rounded-full overflow-hidden bg-white/10">
           <div
             className={`h-full rounded-full transition-all duration-500 ${t.accent}`}
             style={{ width: `${percentage}%` }}
@@ -101,7 +93,8 @@ export default function Sidebar() {
 
       {/* User */}
       <div className={`p-3 border-t ${t.border}`}>
-        <div className={`flex items-center gap-3 px-2 py-2 rounded-xl ${t.hover} transition`}>
+        <Link href="/dashboard/profile"
+          className={`flex items-center gap-3 px-2 py-2 rounded-xl ${t.hover} transition`}>
           <div className={`w-8 h-8 rounded-full ${t.accent} flex items-center justify-center text-white text-sm font-bold shrink-0`}>
             {user?.name?.charAt(0).toUpperCase()}
           </div>
@@ -109,7 +102,7 @@ export default function Sidebar() {
             <p className={`text-sm font-semibold truncate ${t.text}`}>{user?.name}</p>
             <p className={`text-xs truncate ${t.textSub}`}>{user?.email}</p>
           </div>
-        </div>
+        </Link>
         <button onClick={logout}
           className={`w-full mt-1 text-xs py-1.5 rounded-lg transition font-medium ${t.textMuted} hover:text-red-500 hover:bg-red-50`}>
           Sign out

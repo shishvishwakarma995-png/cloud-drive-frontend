@@ -1,14 +1,11 @@
 'use client';
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState } from 'react';
 
 type Mode = 'light' | 'dark';
-type Accent = 'purple' | 'golden';
 
 interface ThemeContextType {
   mode: Mode;
-  accent: Accent;
   toggleMode: () => void;
-  toggleAccent: () => void;
   t: {
     bg: string;
     sidebar: string;
@@ -28,86 +25,50 @@ interface ThemeContextType {
 }
 
 const themes = {
-  'light-purple': {
-    bg: 'bg-white',
-    sidebar: 'bg-white border-slate-200',
-    card: 'bg-white border-slate-200 shadow-sm hover:shadow-md hover:border-violet-200',
-    border: 'border-slate-200',
-    text: 'text-slate-900',
-    textMuted: 'text-slate-500',
-    textSub: 'text-slate-400',
-    hover: 'hover:bg-violet-50',
-    accent: 'bg-violet-600',
-    accentHover: 'hover:bg-violet-500',
-    accentText: 'text-violet-600',
-    accentBg: 'bg-violet-50',
-    accentBorder: 'border-violet-200',
-    input: 'bg-slate-50 border-slate-200 focus:border-violet-400 focus:ring-violet-100',
+  dark: {
+    bg: 'bg-[#0a0a0f]',
+    sidebar: 'bg-[#12111a] border-[#d4af3720]',
+    card: 'bg-[#12111a] border-[#d4af3720] hover:border-[#d4af3750] hover:shadow-sm',
+    border: 'border-[#d4af3725]',
+    text: 'text-[#f0eee8]',
+    textMuted: 'text-[#8a8090]',
+    textSub: 'text-[#5a5460]',
+    hover: 'hover:bg-[#d4af3710]',
+    accent: 'bg-gradient-to-r from-[#7c3aed] to-[#d4af37]',
+    accentHover: 'hover:opacity-90',
+    accentText: 'text-[#d4af37]',
+    accentBg: 'bg-[#d4af3712]',
+    accentBorder: 'border-[#d4af3730]',
+    input: 'bg-[#1a1822] border-[#d4af3725] focus:border-[#d4af37] focus:ring-[#d4af3720]',
   },
-  'light-golden': {
-    bg: 'bg-amber-50',
-    sidebar: 'bg-white border-amber-100',
-    card: 'bg-white border-amber-100 shadow-sm hover:shadow-md hover:border-amber-300',
-    border: 'border-amber-100',
-    text: 'text-slate-900',
-    textMuted: 'text-slate-500',
-    textSub: 'text-slate-400',
-    hover: 'hover:bg-amber-50',
-    accent: 'bg-amber-500',
-    accentHover: 'hover:bg-amber-400',
-    accentText: 'text-amber-600',
-    accentBg: 'bg-amber-50',
-    accentBorder: 'border-amber-200',
-    input: 'bg-slate-50 border-amber-100 focus:border-amber-400 focus:ring-amber-100',
-  },
-  'dark-purple': {
-    bg: 'bg-[#0f0f13]',
-    sidebar: 'bg-[#16161d] border-[#2a2a3a]',
-    card: 'bg-[#16161d] border-[#2a2a3a] shadow-sm hover:shadow-violet-900/20 hover:border-violet-700',
-    border: 'border-[#2a2a3a]',
-    text: 'text-slate-100',
-    textMuted: 'text-slate-400',
-    textSub: 'text-slate-500',
-    hover: 'hover:bg-violet-950/40',
-    accent: 'bg-violet-600',
-    accentHover: 'hover:bg-violet-500',
-    accentText: 'text-violet-400',
-    accentBg: 'bg-violet-950/40',
-    accentBorder: 'border-violet-800',
-    input: 'bg-[#1e1e2a] border-[#2a2a3a] focus:border-violet-500 focus:ring-violet-900/30',
-  },
-  'dark-golden': {
-    bg: 'bg-[#0f0d09]',
-    sidebar: 'bg-[#161410] border-[#2d2618]',
-    card: 'bg-[#161410] border-[#2d2618] shadow-sm hover:shadow-amber-900/20 hover:border-amber-700',
-    border: 'border-[#2d2618]',
-    text: 'text-slate-100',
-    textMuted: 'text-slate-400',
-    textSub: 'text-slate-500',
-    hover: 'hover:bg-amber-950/40',
-    accent: 'bg-amber-500',
-    accentHover: 'hover:bg-amber-400',
-    accentText: 'text-amber-400',
-    accentBg: 'bg-amber-950/40',
-    accentBorder: 'border-amber-800',
-    input: 'bg-[#1e1a10] border-[#2d2618] focus:border-amber-500 focus:ring-amber-900/30',
+  light: {
+    bg: 'bg-[#faf9f7]',
+    sidebar: 'bg-white border-[#e8e0d0]',
+    card: 'bg-white border-[#e8e0d0] hover:border-[#7c3aed40] hover:shadow-sm',
+    border: 'border-[#e8e0d0]',
+    text: 'text-[#1a1825]',
+    textMuted: 'text-[#6b6880]',
+    textSub: 'text-[#9a96a8]',
+    hover: 'hover:bg-[#7c3aed08]',
+    accent: 'bg-gradient-to-r from-[#7c3aed] to-[#d4af37]',
+    accentHover: 'hover:opacity-90',
+    accentText: 'text-[#7c3aed]',
+    accentBg: 'bg-[#7c3aed08]',
+    accentBorder: 'border-[#7c3aed25]',
+    input: 'bg-white border-[#e8e0d0] focus:border-[#7c3aed] focus:ring-[#7c3aed15]',
   },
 };
 
 const ThemeContext = createContext<ThemeContextType | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [mode, setMode] = useState<Mode>('light');
-  const [accent, setAccent] = useState<Accent>('purple');
-
-  const key = `${mode}-${accent}` as keyof typeof themes;
-  const t = themes[key];
+  const [mode, setMode] = useState<Mode>('dark');
+  const t = themes[mode];
 
   return (
     <ThemeContext.Provider value={{
-      mode, accent,
+      mode,
       toggleMode: () => setMode(m => m === 'light' ? 'dark' : 'light'),
-      toggleAccent: () => setAccent(a => a === 'purple' ? 'golden' : 'purple'),
       t,
     }}>
       {children}

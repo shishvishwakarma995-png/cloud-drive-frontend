@@ -1,18 +1,94 @@
 'use client';
+import { useQuery } from '@tanstack/react-query';
 import Sidebar from '@/components/layout/Sidebar';
-import { Trash2 } from 'lucide-react';
+import FileGrid from '@/components/files/FileGrid';
 import { useTheme } from '@/context/ThemeContext';
-export default function TrashPage() {
+import { Users, Folder } from 'lucide-react';
+import api from '@/lib/api';
+
+export default function SharedPage() {
   const { t } = useTheme();
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['shared-with-me'],
+    queryFn: async () => {
+      const res = await api.get('/api/files/shared-with-me');
+      return res.data;
+    },
+  });
+
+  const files = data?.files || [];
+  const folders = data?.folders || [];
+  const isEmpty = files.length === 0 && folders.length === 0;
+
   return (
     <div className={`flex min-h-screen ${t.bg}`}>
       <Sidebar />
-      <div className="ml-64 flex-1 flex flex-col items-center justify-center">
-        <div className={`w-20 h-20 rounded-2xl ${t.accentBg} flex items-center justify-center mb-4`}>
-          <Trash2 size={32} className={t.accentText} />
+      <div className="ml-64 flex-1 flex flex-col">
+
+        {/* Header */}
+        <div className={`flex items-center gap-3 px-6 py-4 border-b ${t.border} ${t.sidebar.split(' ')[0]}`}>
+          <div className={`w-9 h-9 rounded-xl ${t.accentBg} flex items-center justify-center`}>
+            <Users size={18} className={t.accentText} />
+          </div>
+          <div>
+            <h1 className={`font-bold text-lg ${t.text}`}>Shared with Me</h1>
+            <p className={`text-xs ${t.textSub}`}>{files.length + folders.length} items</p>
+          </div>
         </div>
-        <p className={`font-semibold text-lg ${t.text}`}>Shared by others</p>
-        <p className={`text-sm mt-1 ${t.textMuted}`}>Files shared by others will appear here</p>
+
+        <div className="flex-1 p-6">
+          {isLoading && (
+            <div className="grid grid-cols-6 gap-3">
+              {[...Array(12)].map((_, i) => (
+                <div key={i} className={`border ${t.border} rounded-2xl p-4 animate-pulse h-24 ${t.accentBg}`} />
+              ))}
+            </div>
+          )}
+
+          {!isLoading && isEmpty && (
+            <div className="flex flex-col items-center justify-center h-72 text-center">
+              <div className={`w-20 h-20 rounded-2xl ${t.accentBg} flex items-center justify-center mb-4`}>
+                <Users size={36} className={t.accentText} />
+              </div>
+              <p className={`font-semibold text-lg ${t.text}`}>No shared files yet</p>
+              <p className={`text-sm mt-1 ${t.textMuted}`}>Files shared with you will appear here</p>
+            </div>
+          )}
+
+          {/* Shared Folders */}
+          {!isLoading && folders.length > 0 && (
+            <div className="mb-6">
+              <h3 className={`text-xs font-bold uppercase tracking-widest mb-3 ${t.textSub}`}>
+                Folders — {folders.length}
+              </h3>
+              <div className={`rounded-2xl border ${t.border} overflow-hidden`}>
+                {folders.map((folder: any, i: number) => (
+                  <div key={folder.id}
+                    className={`flex items-center gap-3 px-4 py-3 ${t.hover} transition ${i !== folders.length - 1 ? `border-b ${t.border}` : ''}`}>
+                    <div className={`w-8 h-8 rounded-lg ${t.accentBg} flex items-center justify-center`}>
+                      <Folder size={16} className={t.accentText} />
+                    </div>
+                    <span className={`flex-1 text-sm font-medium ${t.text}`}>{folder.name}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${t.accentBg} ${t.accentText} font-medium`}>
+                      {folder.permission}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Shared Files */}
+          {!isLoading && files.length > 0 && (
+            <div>
+              <h3 className={`text-xs font-bold uppercase tracking-widest mb-3 ${t.textSub}`}>
+                Files — {files.length}
+              </h3>
+              <FileGrid files={files} view="grid" />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

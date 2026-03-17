@@ -1,10 +1,13 @@
 'use client';
 import { useState } from 'react';
-import { File, Image, Film, Music, FileText, Archive, MoreVertical, Trash2, Download, Star } from 'lucide-react';
-import { useDeleteFile } from '@/hooks/useFiles';
+import { File, Image, Film, Music, FileText, Archive, MoreVertical, Trash2, Download, Star, Share2, Pencil, Link2 } from 'lucide-react';
+import { useDeleteFile, useRenameFile } from '@/hooks/useFiles';
 import { useTheme } from '@/context/ThemeContext';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
+import ShareModal from './ShareModal';
+import LinkModal from './LinkModal';
+import FilePreviewModal from './FilePreviewModal';
 
 interface FileItem {
   id: string;
@@ -20,6 +23,7 @@ interface FileItem {
 interface Props {
   files: FileItem[];
   view: 'grid' | 'list';
+  onDragStart?: (e: React.DragEvent, id: string, type: 'file' | 'folder') => void;
 }
 
 const getFileIcon = (mimeType: string) => {
@@ -55,9 +59,15 @@ const handleDownload = async (url: string, name: string) => {
   }
 };
 
-export default function FileGrid({ files, view }: Props) {
+export default function FileGrid({ files, view, onDragStart }: Props) {
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
+  const [shareItem, setShareItem] = useState<{ id: string; name: string } | null>(null);
+  const [linkItem, setLinkItem] = useState<{ id: string; name: string } | null>(null);
+  const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
+  const [renaming, setRenaming] = useState<string | null>(null);
+  const [newName, setNewName] = useState('');
   const deleteFile = useDeleteFile();
+  const renameFile = useRenameFile();
   const { t } = useTheme();
   const queryClient = useQueryClient();
 
@@ -79,41 +89,168 @@ export default function FileGrid({ files, view }: Props) {
     setMenuOpen(null);
   };
 
+  const handleRename = async (id: string) => {
+    if (!newName.trim()) return;
+    await renameFile.mutateAsync({ id, name: newName.trim() });
+    setRenaming(null);
+    setNewName('');
+  };
+
+  const startRename = (file: FileItem) => {
+    setRenaming(file.id);
+    setNewName(file.name);
+    setMenuOpen(null);
+  };
+
   if (files.length === 0) return null;
 
   if (view === 'list') {
     return (
-      <div className={`rounded-2xl border ${t.border} overflow-hidden`}>
-        <div className={`grid grid-cols-12 px-4 py-2.5 border-b ${t.border} text-xs font-semibold uppercase tracking-wider ${t.textSub} ${t.accentBg}`}>
-          <span className="col-span-5">Name</span>
-          <span className="col-span-3">Size</span>
-          <span className="col-span-3">Created</span>
-          <span className="col-span-1"></span>
+      <>
+        <div className={`rounded-2xl border ${t.border} overflow-hidden`}>
+          <div className={`grid grid-cols-12 px-4 py-2.5 border-b ${t.border} text-xs font-semibold uppercase tracking-wider ${t.textSub} ${t.accentBg}`}>
+            <span className="col-span-5">Name</span>
+            <span className="col-span-3">Size</span>
+            <span className="col-span-3">Created</span>
+            <span className="col-span-1"></span>
+          </div>
+          {files.map((file, i) => {
+            const { icon: Icon, color, bg } = getFileIcon(file.mime_type);
+            return (
+              <div key={file.id}
+                draggable
+                onDragStart={(e) => onDragStart?.(e, file.id, 'file')}
+                onDoubleClick={() => setPreviewFile(file)}
+                className={`grid grid-cols-12 items-center px-4 py-3 transition group cursor-pointer ${t.hover} ${i !== files.length - 1 ? `border-b ${t.border}` : ''}`}>
+                <div className="col-span-5 flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-lg ${bg} flex items-center justify-center shrink-0`}>
+                    <Icon size={16} className={color} />
+                  </div>
+                  {renaming === file.id ? (
+                    <input autoFocus value={newName}
+                      onChange={e => setNewName(e.target.value)}
+                      onBlur={() => handleRename(file.id)}
+                      onKeyDown={e => { if (e.key === 'Enter') handleRename(file.id); if (e.key === 'Escape') { setRenaming(null); setNewName(''); } }}
+                      onClick={e => e.stopPropagation()}
+                      className={`text-sm px-2 py-0.5 rounded-lg border outline-none ${t.input} ${t.text} w-40`} />
+                  ) : (
+                    <>
+                      <span className={`text-sm font-medium truncate ${t.text}`}>{file.name}</span>
+                      {file.is_starred && <Star size={12} className="text-yellow-400 fill-yellow-400 shrink-0" />}
+                    </>
+                  )}
+                </div>
+                <span className={`col-span-3 text-sm ${t.textSub}`}>{formatSize(file.size_bytes || file.size)}</span>
+                <span className={`col-span-3 text-sm ${t.textSub}`}>
+                  {new Date(file.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </span>
+                <div className="col-span-1 flex justify-end relative">
+                  <button onClick={(e) => { e.stopPropagation(); setMenuOpen(menuOpen === file.id ? null : file.id); }}
+                    className={`p-1.5 rounded-lg ${t.hover} ${t.textSub} opacity-0 group-hover:opacity-100 transition`}>
+                    <MoreVertical size={15} />
+                  </button>
+                  {menuOpen === file.id && (
+                    <div className={`absolute right-0 ${i < Math.ceil(files.length / 2) ? 'top-8' : 'bottom-8'} border ${t.border} rounded-xl shadow-xl z-[100] w-40 py-1 ${t.sidebar.split(' ')[0]}`}>
+                      <button onClick={() => { setShareItem({ id: file.id, name: file.name }); setMenuOpen(null); }}
+                        className={`flex items-center gap-2 w-full px-3 py-2 text-sm ${t.textMuted} ${t.hover}`}>
+                        <Share2 size={14} /> Share
+                      </button>
+                      <button onClick={() => { setLinkItem({ id: file.id, name: file.name }); setMenuOpen(null); }}
+                        className={`flex items-center gap-2 w-full px-3 py-2 text-sm ${t.textMuted} ${t.hover}`}>
+                        <Link2 size={14} /> Get Link
+                      </button>
+                      <button onClick={() => startRename(file)}
+                        className={`flex items-center gap-2 w-full px-3 py-2 text-sm ${t.textMuted} ${t.hover}`}>
+                        <Pencil size={14} /> Rename
+                      </button>
+                      <button onClick={() => { toggleStar.mutate(file.id); setMenuOpen(null); }}
+                        className={`flex items-center gap-2 w-full px-3 py-2 text-sm ${t.textMuted} ${t.hover}`}>
+                        <Star size={14} className={file.is_starred ? 'text-yellow-400 fill-yellow-400' : ''} />
+                        {file.is_starred ? 'Unstar' : 'Star'}
+                      </button>
+                      <button onClick={() => { handleDownload(file.url, file.name); setMenuOpen(null); }}
+                        className={`flex items-center gap-2 w-full px-3 py-2 text-sm ${t.textMuted} ${t.hover}`}>
+                        <Download size={14} /> Download
+                      </button>
+                      <button onClick={() => handleDelete(file.id)}
+                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-500 hover:bg-red-50">
+                        <Trash2 size={14} /> Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
+        {shareItem && <ShareModal item={shareItem} type="file" onClose={() => setShareItem(null)} />}
+        {linkItem && <LinkModal item={linkItem} type="file" onClose={() => setLinkItem(null)} />}
+        {previewFile && <FilePreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
         {files.map((file, i) => {
           const { icon: Icon, color, bg } = getFileIcon(file.mime_type);
           return (
             <div key={file.id}
-              onDoubleClick={() => file.url && window.open(file.url, '_blank')}
-              className={`grid grid-cols-12 items-center px-4 py-3 transition group cursor-pointer ${t.hover} ${i !== files.length - 1 ? `border-b ${t.border}` : ''}`}>
-              <div className="col-span-5 flex items-center gap-3">
-                <div className={`w-8 h-8 rounded-lg ${bg} flex items-center justify-center`}>
-                  <Icon size={16} className={color} />
+              draggable
+              onDragStart={(e) => onDragStart?.(e, file.id, 'file')}
+              onDoubleClick={() => setPreviewFile(file)}
+              className={`group relative border rounded-2xl p-4 cursor-pointer transition ${t.card}`}
+              style={{ overflow: 'visible' }}>
+
+              {file.is_starred && (
+                <div className="absolute top-2.5 left-2.5">
+                  <Star size={13} className="text-yellow-400 fill-yellow-400" />
                 </div>
-                <span className={`text-sm font-medium truncate ${t.text}`}>{file.name}</span>
-                {file.is_starred && <Star size={12} className="text-yellow-400 fill-yellow-400 shrink-0" />}
-              </div>
-              <span className={`col-span-3 text-sm ${t.textSub}`}>{formatSize(file.size_bytes || file.size)}</span>
-              <span className={`col-span-3 text-sm ${t.textSub}`}>
-                {new Date(file.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-              </span>
-              <div className="col-span-1 flex justify-end relative">
+              )}
+
+              {file.mime_type.startsWith('image/') ? (
+                <div className="w-full h-20 rounded-xl overflow-hidden mb-3 bg-slate-100">
+                  <img src={file.url} alt={file.name} className="w-full h-full object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                </div>
+              ) : (
+                <div className={`w-11 h-11 rounded-xl ${bg} flex items-center justify-center mb-3`}>
+                  <Icon size={22} className={color} />
+                </div>
+              )}
+
+              {renaming === file.id ? (
+                <input autoFocus value={newName}
+                  onChange={e => setNewName(e.target.value)}
+                  onBlur={() => handleRename(file.id)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleRename(file.id); if (e.key === 'Escape') { setRenaming(null); setNewName(''); } }}
+                  onClick={e => e.stopPropagation()}
+                  className={`w-full text-xs border rounded-lg px-1 py-0.5 outline-none ${t.input} ${t.text}`} />
+              ) : (
+                <p className={`text-sm font-semibold truncate ${t.text}`}>{file.name}</p>
+              )}
+              <p className={`text-xs mt-0.5 ${t.textSub}`}>{formatSize(file.size_bytes || file.size)}</p>
+
+              <div className="absolute top-2.5 right-2.5 opacity-0 group-hover:opacity-100 transition">
                 <button onClick={(e) => { e.stopPropagation(); setMenuOpen(menuOpen === file.id ? null : file.id); }}
-                  className={`p-1.5 rounded-lg ${t.hover} ${t.textSub} opacity-0 group-hover:opacity-100 transition`}>
-                  <MoreVertical size={15} />
+                  className={`p-1 rounded-lg ${t.hover} ${t.textSub}`}>
+                  <MoreVertical size={14} />
                 </button>
                 {menuOpen === file.id && (
-                  <div className={`absolute right-0 ${i < Math.ceil(files.length / 2) ? 'top-8' : 'bottom-8'} border ${t.border} rounded-xl shadow-xl z-50 w-36 py-1 ${t.sidebar.split(' ')[0]}`}>
+                  <div className={`absolute right-0 top-7 border ${t.border} rounded-xl shadow-xl z-[100] w-40 py-1 ${t.sidebar.split(' ')[0]}`}>
+                    <button onClick={() => { setShareItem({ id: file.id, name: file.name }); setMenuOpen(null); }}
+                      className={`flex items-center gap-2 w-full px-3 py-2 text-sm ${t.textMuted} ${t.hover}`}>
+                      <Share2 size={14} /> Share
+                    </button>
+                    <button onClick={() => { setLinkItem({ id: file.id, name: file.name }); setMenuOpen(null); }}
+                      className={`flex items-center gap-2 w-full px-3 py-2 text-sm ${t.textMuted} ${t.hover}`}>
+                      <Link2 size={14} /> Get Link
+                    </button>
+                    <button onClick={() => startRename(file)}
+                      className={`flex items-center gap-2 w-full px-3 py-2 text-sm ${t.textMuted} ${t.hover}`}>
+                      <Pencil size={14} /> Rename
+                    </button>
                     <button onClick={() => { toggleStar.mutate(file.id); setMenuOpen(null); }}
                       className={`flex items-center gap-2 w-full px-3 py-2 text-sm ${t.textMuted} ${t.hover}`}>
                       <Star size={14} className={file.is_starred ? 'text-yellow-400 fill-yellow-400' : ''} />
@@ -134,65 +271,9 @@ export default function FileGrid({ files, view }: Props) {
           );
         })}
       </div>
-    );
-  }
-
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-      {files.map((file, i) => {
-        const { icon: Icon, color, bg } = getFileIcon(file.mime_type);
-        return (
-          <div key={file.id}
-            onDoubleClick={() => file.url && window.open(file.url, '_blank')}
-            className={`group relative border rounded-2xl p-4 cursor-pointer transition ${t.card}`}>
-
-            {/* Star indicator */}
-            {file.is_starred && (
-              <div className="absolute top-2.5 left-2.5">
-                <Star size={13} className="text-yellow-400 fill-yellow-400" />
-              </div>
-            )}
-
-            {file.mime_type.startsWith('image/') ? (
-              <div className="w-full h-20 rounded-xl overflow-hidden mb-3 bg-slate-100">
-                <img src={file.url} alt={file.name} className="w-full h-full object-cover"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-              </div>
-            ) : (
-              <div className={`w-11 h-11 rounded-xl ${bg} flex items-center justify-center mb-3`}>
-                <Icon size={22} className={color} />
-              </div>
-            )}
-
-            <p className={`text-sm font-semibold truncate ${t.text}`}>{file.name}</p>
-            <p className={`text-xs mt-0.5 ${t.textSub}`}>{formatSize(file.size_bytes || file.size)}</p>
-
-            <div className="absolute top-2.5 right-2.5 opacity-0 group-hover:opacity-100 transition">
-              <button onClick={(e) => { e.stopPropagation(); setMenuOpen(menuOpen === file.id ? null : file.id); }}
-                className={`p-1 rounded-lg ${t.hover} ${t.textSub}`}>
-                <MoreVertical size={14} />
-              </button>
-              {menuOpen === file.id && (
-                <div className={`absolute right-0 bottom-7 border ${t.border} rounded-xl shadow-xl z-50 w-36 py-1 ${t.sidebar.split(' ')[0]}`}>
-                  <button onClick={() => { toggleStar.mutate(file.id); setMenuOpen(null); }}
-                    className={`flex items-center gap-2 w-full px-3 py-2 text-sm ${t.textMuted} ${t.hover}`}>
-                    <Star size={14} className={file.is_starred ? 'text-yellow-400 fill-yellow-400' : ''} />
-                    {file.is_starred ? 'Unstar' : 'Star'}
-                  </button>
-                  <button onClick={() => { handleDownload(file.url, file.name); setMenuOpen(null); }}
-                    className={`flex items-center gap-2 w-full px-3 py-2 text-sm ${t.textMuted} ${t.hover}`}>
-                    <Download size={14} /> Download
-                  </button>
-                  <button onClick={() => handleDelete(file.id)}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-500 hover:bg-red-50">
-                    <Trash2 size={14} /> Delete
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        );
-      })}
-    </div>
+      {shareItem && <ShareModal item={shareItem} type="file" onClose={() => setShareItem(null)} />}
+      {linkItem && <LinkModal item={linkItem} type="file" onClose={() => setLinkItem(null)} />}
+      {previewFile && <FilePreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />}
+    </>
   );
 }
