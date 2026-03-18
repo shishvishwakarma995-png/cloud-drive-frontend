@@ -107,8 +107,8 @@ export default function FileGrid({ files, view, onDragStart }: Props) {
   if (view === 'list') {
     return (
       <>
-        <div className={`rounded-2xl border ${t.border} overflow-hidden`}>
-          <div className={`grid grid-cols-12 px-4 py-2.5 border-b ${t.border} text-xs font-semibold uppercase tracking-wider ${t.textSub} ${t.accentBg}`}>
+        <div className={`rounded-2xl border ${t.border}`} style={{ overflow: 'visible' }}>
+          <div className={`grid grid-cols-12 px-4 py-2.5 border-b ${t.border} text-xs font-semibold uppercase tracking-wider ${t.textSub} ${t.accentBg} rounded-t-2xl`}>
             <span className="col-span-5">Name</span>
             <span className="col-span-3">Size</span>
             <span className="col-span-3">Created</span>

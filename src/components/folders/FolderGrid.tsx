@@ -63,8 +63,8 @@ export default function FolderGrid({ folders, view, onFolderClick, onDragStart, 
   if (view === 'list') {
     return (
       <>
-        <div className={`rounded-2xl border ${t.border} overflow-hidden`}>
-          <div className={`grid grid-cols-12 px-4 py-2.5 border-b ${t.border} text-xs font-semibold uppercase tracking-wider ${t.textSub} ${t.accentBg}`}>
+        <div className={`rounded-2xl border ${t.border}`} style={{ overflow: 'visible' }}>
+          <div className={`grid grid-cols-12 px-4 py-2.5 border-b ${t.border} text-xs font-semibold uppercase tracking-wider ${t.textSub} ${t.accentBg} rounded-t-2xl`}>
             <span className="col-span-6">Name</span>
             <span className="col-span-4">Created</span>
             <span className="col-span-2"></span>
@@ -100,7 +100,7 @@ export default function FolderGrid({ folders, view, onFolderClick, onDragStart, 
                   <MoreVertical size={15} />
                 </button>
                 {menuOpen === folder.id && (
-                  <div className={`absolute right-0 ${i < Math.ceil(folders.length / 2) ? 'top-8' : 'bottom-8'} border ${t.border} rounded-xl shadow-xl z-50 w-40 py-1 ${t.sidebar.split(' ')[0]}`}>
+                  <div className={`absolute right-0 ${i < Math.ceil(folders.length / 2) ? 'top-8' : 'bottom-8'} border ${t.border} rounded-xl shadow-xl z-[100] w-40 py-1 ${t.sidebar.split(' ')[0]}`}>
                     <button onClick={() => { setShareItem({ id: folder.id, name: folder.name }); setMenuOpen(null); }}
                       className={`flex items-center gap-2 w-full px-3 py-2 text-sm ${t.textMuted} ${t.hover}`}>
                       <Share2 size={14} /> Share
@@ -145,6 +145,7 @@ export default function FolderGrid({ folders, view, onFolderClick, onDragStart, 
             onDragLeave={onDragLeave}
             onDrop={(e) => onDrop?.(e, folder.id)}
             className={`group relative border rounded-2xl p-4 cursor-pointer transition ${t.card} ${dragOverFolder === folder.id ? `ring-2 ${t.accentBorder}` : ''}`}
+            style={{ overflow: 'visible' }}
             onDoubleClick={() => onFolderClick(folder.id)}>
 
             {folder.is_starred && (
