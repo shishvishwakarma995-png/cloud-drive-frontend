@@ -1,10 +1,10 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Cloud, Lock, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import api from '@/lib/api';
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [password, setPassword] = useState('');
@@ -60,7 +60,6 @@ export default function ResetPasswordPage() {
                   {error}
                 </div>
               )}
-
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">New Password</label>
                 <div className="relative">
@@ -78,7 +77,6 @@ export default function ResetPasswordPage() {
                   </button>
                 </div>
               </div>
-
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">Confirm Password</label>
                 <div className="relative">
@@ -93,7 +91,6 @@ export default function ResetPasswordPage() {
                   />
                 </div>
               </div>
-
               <button
                 onClick={handleReset}
                 disabled={loading}
@@ -105,5 +102,17 @@ export default function ResetPasswordPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse text-slate-500">Loading...</div>
+      </div>
+    }>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }
