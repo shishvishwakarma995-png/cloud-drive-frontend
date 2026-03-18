@@ -281,8 +281,8 @@ export default function ProfilePage() {
               <div>
                 <p className={`text-xs ${t.textSub}`}>Member since</p>
                 <p className={`text-sm font-semibold ${t.text}`}>
-                  {user?.created_at
-                    ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+                  {(user as any)?.created_at
+                    ? new Date((user as any).created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
                     : 'N/A'}
                 </p>
               </div>
