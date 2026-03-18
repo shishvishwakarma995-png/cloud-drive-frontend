@@ -1,24 +1,32 @@
 'use client';
-import { useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, Suspense, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Cloud, Lock, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import api from '@/lib/api';
 
 function ResetPasswordForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState('');
-  const accessToken = searchParams.get('access_token') || '';
+  const [accessToken, setAccessToken] = useState('');
+
+  // Hash se token uthao (#access_token=...)
+  useEffect(() => {
+    const hash = window.location.hash;
+    const params = new URLSearchParams(hash.replace('#', ''));
+    const token = params.get('access_token') || '';
+    setAccessToken(token);
+  }, []);
 
   const handleReset = async () => {
     if (!password || !confirm) return setError('Both fields required');
     if (password !== confirm) return setError('Passwords do not match');
     if (password.length < 8) return setError('Password must be at least 8 characters');
+    if (!accessToken) return setError('Invalid or expired reset link. Please request a new one.');
 
     setLoading(true);
     setError('');
