@@ -45,7 +45,7 @@ export default function Sidebar() {
           <span className={`font-bold text-lg ${t.text}`}>Cloud Drive</span>
         </div>
 
-        {/* Sirf Dark/Light toggle */}
+        {/* Dark/Light toggle */}
         <button
           onClick={toggleMode}
           className={`w-8 h-8 rounded-lg ${t.accentBg} flex items-center justify-center transition ${t.accentText}`}

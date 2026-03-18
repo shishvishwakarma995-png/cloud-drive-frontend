@@ -86,7 +86,7 @@ export const useMoveFolder = () => {
   });
 };
 
-// End mein add karo:
+// add at the end:
 export const useRenameFile = () => {
   const queryClient = useQueryClient();
   return useMutation({

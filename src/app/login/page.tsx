@@ -19,6 +19,9 @@ export default function LoginPage() {
     setError('');
     try {
       const res = await api.post('/api/auth/login', form);
+      if (res.data.accessToken) {
+        localStorage.setItem('accessToken', res.data.accessToken);
+      }
       if (res.data.user) {
         window.location.href = '/dashboard';
       }
@@ -44,7 +47,6 @@ export default function LoginPage() {
         overflow: 'hidden',
       }}>
 
-      {/* Cursor glow */}
       <div style={{
         position: 'fixed',
         left: mousePos.x - 250,
@@ -56,7 +58,6 @@ export default function LoginPage() {
         transition: 'left 0.15s ease, top 0.15s ease',
       }} />
 
-      {/* Background decorations */}
       <div style={{
         position: 'absolute', top: '10%', left: '5%',
         width: '400px', height: '400px', borderRadius: '50%',
@@ -104,7 +105,6 @@ export default function LoginPage() {
         boxShadow: '0 25px 80px rgba(0,0,0,0.5)',
       }}>
 
-        {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <div style={{
             width: '56px', height: '56px', borderRadius: '16px',
@@ -121,7 +121,6 @@ export default function LoginPage() {
           <p style={{ fontSize: '0.85rem', color: '#4a4760' }}>Sign in to your Cloud Drive</p>
         </div>
 
-        {/* Error */}
         {error && (
           <div style={{
             background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
@@ -133,47 +132,31 @@ export default function LoginPage() {
         )}
 
         <form onSubmit={handleSubmit}>
-          {/* Email */}
           <div style={{ marginBottom: '1.2rem' }}>
             <label style={{ display: 'block', fontSize: '0.8rem', color: '#8a8090', marginBottom: '0.5rem', letterSpacing: '0.05em' }}>
               EMAIL ADDRESS
             </label>
             <div style={{ position: 'relative' }}>
               <Mail size={15} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#4a4760' }} />
-              <input
-                type="email"
-                value={form.email}
+              <input type="email" value={form.email}
                 onChange={e => setForm({ ...form, email: e.target.value })}
-                className="login-input"
-                placeholder="you@example.com"
-                required
-              />
+                className="login-input" placeholder="you@example.com" required />
             </div>
           </div>
 
-          {/* Password */}
           <div style={{ marginBottom: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
               <label style={{ fontSize: '0.8rem', color: '#8a8090', letterSpacing: '0.05em' }}>PASSWORD</label>
-              <Link href="/forgot-password" style={{
-                fontSize: '0.75rem', color: '#d4af37', textDecoration: 'none', transition: 'opacity 0.2s',
-              }}
-                onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.opacity = '0.7'}
-                onMouseLeave={e => (e.currentTarget as HTMLAnchorElement).style.opacity = '1'}>
+              <Link href="/forgot-password" style={{ fontSize: '0.75rem', color: '#d4af37', textDecoration: 'none' }}>
                 Forgot password?
               </Link>
             </div>
             <div style={{ position: 'relative' }}>
               <Lock size={15} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#4a4760' }} />
-              <input
-                type={showPass ? 'text' : 'password'}
-                value={form.password}
+              <input type={showPass ? 'text' : 'password'} value={form.password}
                 onChange={e => setForm({ ...form, password: e.target.value })}
-                className="login-input"
-                placeholder="••••••••"
-                style={{ paddingRight: '3rem' }}
-                required
-              />
+                className="login-input" placeholder="••••••••"
+                style={{ paddingRight: '3rem' }} required />
               <button type="button" onClick={() => setShowPass(!showPass)} style={{
                 position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)',
                 background: 'none', border: 'none', cursor: 'pointer', color: '#4a4760', padding: 0,
@@ -183,55 +166,31 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: '100%', padding: '0.85rem',
-              background: loading ? 'rgba(212,175,55,0.4)' : 'linear-gradient(135deg, #7c3aed, #d4af37)',
-              border: 'none', borderRadius: '12px',
-              color: '#fff', fontWeight: 'bold', fontSize: '0.95rem',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              transition: 'all 0.3s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-              fontFamily: 'Georgia, serif',
-            }}
-            onMouseEnter={e => {
-              if (!loading) {
-                (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)';
-                (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 8px 25px rgba(212,175,55,0.3)';
-              }
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)';
-              (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none';
-            }}>
+          <button type="submit" disabled={loading} style={{
+            width: '100%', padding: '0.85rem',
+            background: loading ? 'rgba(212,175,55,0.4)' : 'linear-gradient(135deg, #7c3aed, #d4af37)',
+            border: 'none', borderRadius: '12px',
+            color: '#fff', fontWeight: 'bold', fontSize: '0.95rem',
+            cursor: loading ? 'not-allowed' : 'pointer',
+            transition: 'all 0.3s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+            fontFamily: 'Georgia, serif',
+          }}>
             {loading ? 'Signing in...' : (<>Sign In <ArrowRight size={16} /></>)}
           </button>
         </form>
 
-        {/* Divider */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '1rem',
-          margin: '1.5rem 0',
-        }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: '1.5rem 0' }}>
           <div style={{ flex: 1, height: '1px', background: 'rgba(212,175,55,0.1)' }} />
           <span style={{ fontSize: '0.75rem', color: '#4a4760' }}>or</span>
           <div style={{ flex: 1, height: '1px', background: 'rgba(212,175,55,0.1)' }} />
         </div>
 
-        {/* Register link */}
         <p style={{ textAlign: 'center', fontSize: '0.85rem', color: '#4a4760' }}>
           Don't have an account?{' '}
-          <Link href="/register" style={{
-            color: '#d4af37', textDecoration: 'none', fontWeight: 'bold', transition: 'opacity 0.2s',
-          }}
-            onMouseEnter={e => (e.currentTarget as HTMLAnchorElement).style.opacity = '0.7'}
-            onMouseLeave={e => (e.currentTarget as HTMLAnchorElement).style.opacity = '1'}>
+          <Link href="/register" style={{ color: '#d4af37', textDecoration: 'none', fontWeight: 'bold' }}>
             Create account
           </Link>
         </p>
-
       </div>
     </div>
   );

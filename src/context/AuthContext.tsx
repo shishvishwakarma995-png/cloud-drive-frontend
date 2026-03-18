@@ -26,14 +26,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      setLoading(false);
+      return;
+    }
     api.get('/api/auth/me')
       .then(res => setUser(res.data.user))
-      .catch(() => setUser(null))
+      .catch(() => {
+        localStorage.removeItem('accessToken');
+        setUser(null);
+      })
       .finally(() => setLoading(false));
   }, []);
 
   const logout = async () => {
-    await api.post('/api/auth/logout');
+    localStorage.removeItem('accessToken');
+    await api.post('/api/auth/logout').catch(() => {});
     setUser(null);
     window.location.href = '/login';
   };
