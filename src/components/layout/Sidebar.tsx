@@ -66,11 +66,10 @@ export default function Sidebar() {
           const isActive = pathname === item.href;
           return (
             <Link key={item.href} href={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all relative ${
-                isActive
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all relative ${isActive
                   ? `${t.accentBg} ${t.accentText}`
                   : `${t.textMuted} ${t.hover}`
-              }`}>
+                }`}>
               {isActive && (
                 <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full ${t.accent}`} />
               )}
@@ -100,9 +99,17 @@ export default function Sidebar() {
       <div className={`p-3 border-t ${t.border}`}>
         <Link href="/dashboard/profile"
           className={`flex items-center gap-3 px-2 py-2 rounded-xl ${t.hover} transition`}>
-          <div className={`w-8 h-8 rounded-full ${t.accent} flex items-center justify-center text-white text-sm font-bold shrink-0`}>
-            {user?.name?.charAt(0).toUpperCase()}
-          </div>
+          {user?.image_url ? (
+            <img
+              src={user.image_url}
+              alt={user.name}
+              className="w-8 h-8 rounded-full object-cover shrink-0"
+            />
+          ) : (
+            <div className={`w-8 h-8 rounded-full ${t.accent} flex items-center justify-center text-white text-sm font-bold shrink-0`}>
+              {user?.name?.charAt(0).toUpperCase()}
+            </div>
+          )}
           <div className="flex-1 min-w-0">
             <p className={`text-sm font-semibold truncate ${t.text}`}>{user?.name}</p>
             <p className={`text-xs truncate ${t.textSub}`}>{user?.email}</p>
