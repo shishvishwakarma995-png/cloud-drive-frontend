@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { HardDrive, Users, Star, Clock, Trash2, Cloud, Sun, Moon } from 'lucide-react';
+import { HardDrive, Users, Star, Clock, Trash2, Cloud, Sun, Moon, Activity } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useQuery } from '@tanstack/react-query';
@@ -12,6 +12,7 @@ const navItems = [
   { label: 'Shared with Me', href: '/dashboard/shared', icon: Users },
   { label: 'Starred', href: '/dashboard/starred', icon: Star },
   { label: 'Recent', href: '/dashboard/recent', icon: Clock },
+  { label: 'Activity', href: '/dashboard/activity', icon: Activity },
   { label: 'Trash', href: '/dashboard/trash', icon: Trash2 },
 ];
 
@@ -29,9 +30,15 @@ export default function Sidebar() {
     refetchInterval: 30000,
   });
 
-  const usedGB = storageData?.usedGB || '0.00';
+  const usedBytes = storageData?.used || 0;
   const totalGB = storageData?.totalGB || 15;
   const percentage = storageData?.percentage || 0;
+
+  const formatStorage = (bytes: number) => {
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+  };
 
   return (
     <div className={`w-64 h-screen fixed left-0 top-0 flex flex-col border-r ${t.sidebar}`}>
@@ -44,8 +51,6 @@ export default function Sidebar() {
           </div>
           <span className={`font-bold text-lg ${t.text}`}>Cloud Drive</span>
         </div>
-
-        {/* Dark/Light toggle */}
         <button
           onClick={toggleMode}
           className={`w-8 h-8 rounded-lg ${t.accentBg} flex items-center justify-center transition ${t.accentText}`}
@@ -80,12 +85,12 @@ export default function Sidebar() {
       <div className={`mx-3 mb-3 p-3 rounded-xl ${t.accentBg} border ${t.accentBorder}`}>
         <div className={`flex justify-between text-xs ${t.accentText} mb-1.5`}>
           <span className="font-semibold">Storage</span>
-          <span>{usedGB} / {totalGB} GB</span>
+          <span>{formatStorage(usedBytes)} / {totalGB} GB</span>
         </div>
         <div className="h-1.5 rounded-full overflow-hidden bg-white/10">
           <div
             className={`h-full rounded-full transition-all duration-500 ${t.accent}`}
-            style={{ width: `${percentage}%` }}
+            style={{ width: `${Math.max(percentage, 0.5)}%` }}
           />
         </div>
         <p className={`text-xs mt-1 ${t.accentText} opacity-70`}>{percentage}% used</p>

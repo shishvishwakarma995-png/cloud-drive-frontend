@@ -14,7 +14,7 @@ function ResetPasswordForm() {
   const [error, setError] = useState('');
   const [accessToken, setAccessToken] = useState('');
 
-  // Hash se token uthao (#access_token=...)
+  // Pick up the token from the hash (#access_token=...)
   useEffect(() => {
     const hash = window.location.hash;
     const params = new URLSearchParams(hash.replace('#', ''));
