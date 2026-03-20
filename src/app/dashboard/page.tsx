@@ -21,6 +21,7 @@ export default function DashboardPage() {
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
+  const [sort, setSort] = useState('date');
 
   const { data: folderData, isLoading: foldersLoading } = useFolderContents(currentFolderId);
   const { data: fileData, isLoading: filesLoading } = useFiles(currentFolderId);
@@ -55,6 +56,26 @@ export default function DashboardPage() {
   const isRoot = !currentFolderId;
   const recentFiles = recentData?.files?.slice(0, 8) || [];
 
+  // Sort function
+  const sortFiles = (items: any[]) => {
+    return [...items].sort((a, b) => {
+      if (sort === 'name') return a.name.localeCompare(b.name);
+      if (sort === 'size') return (b.size_bytes || 0) - (a.size_bytes || 0);
+      if (sort === 'type') return (a.mime_type || '').localeCompare(b.mime_type || '');
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  };
+
+  const sortFolders = (items: any[]) => {
+    return [...items].sort((a, b) => {
+      if (sort === 'name') return a.name.localeCompare(b.name);
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  };
+
+  const sortedFiles = sortFiles(files);
+  const sortedFolders = sortFolders(folders);
+
   const handleDragStart = (e: React.DragEvent, id: string, type: 'file' | 'folder') => {
     e.dataTransfer.setData('id', id);
     e.dataTransfer.setData('type', type);
@@ -80,12 +101,14 @@ export default function DashboardPage() {
   return (
     <div className={`flex min-h-screen ${t.bg}`}>
       <Sidebar />
-      <div className="ml-64 flex-1 flex flex-col">
+      <div className="md:ml-64 flex-1 flex flex-col">
         <Toolbar
           currentFolderId={currentFolderId}
           view={view}
           onViewChange={setView}
           onFolderNavigate={setCurrentFolderId}
+          onSortChange={setSort}
+          currentSort={sort}
         />
         <div className="flex-1 p-6">
 
@@ -100,14 +123,14 @@ export default function DashboardPage() {
               <div key={item.id} className="flex items-center gap-1">
                 <ChevronRight size={14} className={t.textSub} />
                 <button onClick={() => setCurrentFolderId(item.id)}
-                  className={`text-sm font-medium ${t.textMuted} hover:${t.accentText} transition`}>
+                  className={`text-sm font-medium ${t.textMuted} transition`}>
                   {item.name}
                 </button>
               </div>
             ))}
           </div>
 
-          {/* Recent Files — only on root, only if no folders/files yet or as quick access */}
+          {/* Recent — only on root, no folders/files */}
           {isRoot && !isLoading && recentFiles.length > 0 && folders.length === 0 && files.length === 0 && (
             <div className="mb-6">
               <div className="flex items-center justify-between mb-3">
@@ -115,8 +138,7 @@ export default function DashboardPage() {
                   <Clock size={14} className={t.textSub} />
                   <h3 className={`text-sm font-semibold ${t.textSub}`}>Recent</h3>
                 </div>
-                <Link href="/dashboard/recent"
-                  className={`text-xs ${t.accentText} hover:opacity-70 transition`}>
+                <Link href="/dashboard/recent" className={`text-xs ${t.accentText} hover:opacity-70 transition`}>
                   View all
                 </Link>
               </div>
@@ -124,7 +146,7 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* Recent quick access strip — when there ARE folders/files */}
+          {/* Recent strip — when folders/files exist */}
           {isRoot && !isLoading && recentFiles.length > 0 && (folders.length > 0 || files.length > 0) && (
             <div className="mb-6">
               <div className="flex items-center justify-between mb-3">
@@ -132,13 +154,11 @@ export default function DashboardPage() {
                   <Clock size={14} className={t.textSub} />
                   <h3 className={`text-sm font-semibold ${t.textSub}`}>Recent</h3>
                 </div>
-                <Link href="/dashboard/recent"
-                  className={`text-xs ${t.accentText} hover:opacity-70 transition`}>
+                <Link href="/dashboard/recent" className={`text-xs ${t.accentText} hover:opacity-70 transition`}>
                   View all
                 </Link>
               </div>
-              {/* Horizontal scroll strip */}
-              <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
+              <div className="flex gap-3 overflow-x-auto pb-1">
                 {recentFiles.slice(0, 6).map((file: any) => (
                   <div key={file.id}
                     className={`shrink-0 w-36 border rounded-xl p-3 cursor-pointer ${t.card} ${t.hover} transition`}>
@@ -147,7 +167,7 @@ export default function DashboardPage() {
                         <img src={file.url} alt={file.name} className="w-full h-full object-cover" />
                       </div>
                     ) : (
-                      <div className={`w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center mb-2`}>
+                      <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center mb-2">
                         <span className="text-lg">📄</span>
                       </div>
                     )}
@@ -160,7 +180,7 @@ export default function DashboardPage() {
 
           {/* Loading */}
           {isLoading && (
-            <div className="grid grid-cols-6 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
               {[...Array(12)].map((_, i) => (
                 <div key={i} className={`border ${t.border} rounded-2xl p-4 animate-pulse h-24 ${t.accentBg}`} />
               ))}
@@ -179,13 +199,13 @@ export default function DashboardPage() {
           )}
 
           {/* Folders */}
-          {!isLoading && folders.length > 0 && (
+          {!isLoading && sortedFolders.length > 0 && (
             <div className="mb-6">
               <h3 className={`text-xs font-semibold uppercase tracking-widest mb-3 ${t.textSub}`}>
                 Folders
               </h3>
               <FolderGrid
-                folders={folders}
+                folders={sortedFolders}
                 view={view}
                 onFolderClick={setCurrentFolderId}
                 onDragStart={handleDragStart}
@@ -198,13 +218,13 @@ export default function DashboardPage() {
           )}
 
           {/* Files */}
-          {!isLoading && files.length > 0 && (
+          {!isLoading && sortedFiles.length > 0 && (
             <div>
               <h3 className={`text-xs font-semibold uppercase tracking-widest mb-3 ${t.textSub}`}>
                 Files
               </h3>
               <FileGrid
-                files={files}
+                files={sortedFiles}
                 view={view}
                 onDragStart={handleDragStart}
               />

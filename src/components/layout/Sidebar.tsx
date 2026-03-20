@@ -41,8 +41,7 @@ export default function Sidebar() {
   };
 
   return (
-    <div className={`w-64 h-screen fixed left-0 top-0 flex flex-col border-r ${t.sidebar}`}>
-
+    <div className={`w-64 h-screen fixed left-0 top-0 flex-col border-r ${t.sidebar} hidden md:flex`}>
       {/* Logo + Theme Toggle */}
       <div className={`p-5 border-b ${t.border} flex items-center justify-between`}>
         <div className="flex items-center gap-2.5">
