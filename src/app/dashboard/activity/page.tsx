@@ -25,30 +25,8 @@ export default function ActivityPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['activity'],
     queryFn: async () => {
-      const [filesRes, trashRes] = await Promise.all([
-        api.get('/api/files/recent'),
-        api.get('/api/files/trash'),
-      ]);
-
-      const recentFiles = (filesRes.data?.files || []).map((f: any) => ({
-        id: f.id,
-        action: 'upload',
-        name: f.name,
-        type: 'file',
-        time: f.created_at,
-      }));
-
-      const trashedFiles = (trashRes.data?.files || []).map((f: any) => ({
-        id: f.id + '-trash',
-        action: 'delete',
-        name: f.name,
-        type: 'file',
-        time: f.updated_at,
-      }));
-
-      return [...recentFiles, ...trashedFiles]
-        .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
-        .slice(0, 30);
+      const res = await api.get('/api/files/activity');
+      return res.data.activities || [];
     },
   });
 
@@ -69,7 +47,7 @@ export default function ActivityPage() {
   return (
     <div className={`flex min-h-screen ${t.bg}`}>
       <Sidebar />
-      <div className="ml-64 flex-1 flex flex-col">
+      <div className="md:ml-64 flex-1 flex flex-col">
         <Toolbar
           currentFolderId={null}
           view={view}
@@ -93,7 +71,7 @@ export default function ActivityPage() {
           {!isLoading && (!data || data.length === 0) && (
             <div className={`text-center py-16 ${t.textSub}`}>
               <Upload size={40} className="mx-auto mb-3 opacity-30" />
-              <p>No activity yet</p>
+              <p>No activity yet — upload or share a file to see activity!</p>
             </div>
           )}
 
@@ -114,11 +92,11 @@ export default function ActivityPage() {
                       <p className={`text-sm font-medium ${t.text}`}>
                         <span className={config.color}>{config.label}</span>
                         {' '}
-                        <span className="truncate">{item.name}</span>
+                        <span className="truncate">{item.resource_name || 'Unknown'}</span>
                       </p>
-                      <p className={`text-xs ${t.textSub}`}>{item.type}</p>
+                      <p className={`text-xs ${t.textSub}`}>{item.resource_type}</p>
                     </div>
-                    <span className={`text-xs shrink-0 ${t.textSub}`}>{formatTime(item.time)}</span>
+                    <span className={`text-xs shrink-0 ${t.textSub}`}>{formatTime(item.created_at)}</span>
                   </div>
                 );
               })}
