@@ -25,7 +25,7 @@ export default function ActivityPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['activity'],
     queryFn: async () => {
-      // DB se try karo pehle
+      // First try to get from DB
       try {
         const res = await api.get('/api/files/activity');
         if (res.data.activities && res.data.activities.length > 0) {
